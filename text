@@ -1,9 +1,0 @@
-sandbox-island-web/
-├── package.json
-├── tailwind.config.js
-├── postcss.config.js
-└── src/
-    └── app/
-        ├── layout.tsx
-        ├── page.tsx
-        └── globals.css
