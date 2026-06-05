@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PortfolioHub — แสดงผลงานของคุณ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loader-inner">
+    <div class="loader-logo">PH</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+  </div>
+</div>
+
+<!-- ══ AUTH MODAL ══ -->
+<div id="auth-modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeAuthModal()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">เข้าสู่ระบบ</button>
+      <button class="auth-tab" onclick="switchTab('register')">สมัครสมาชิก</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="tab-login" class="auth-form">
+      <div class="auth-header">
+        <div class="auth-icon">👤</div>
+        <h2>ยินดีต้อนรับกลับ</h2>
+        <p>เข้าสู่ระบบเพื่อจัดการผลงานของคุณ</p>
+      </div>
+      <div class="form-group">
+        <label>อีเมล</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div id="login-error" class="form-error hidden"></div>
+      <button class="btn-primary full" onclick="handleLogin()">
+        <span>เข้าสู่ระบบ</span>
+      </button>
+      <div class="auth-divider"><span>หรือ</span></div>
+      <button class="btn-google" onclick="handleGoogleLogin()">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        เข้าสู่ระบบด้วย Google
+      </button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="tab-register" class="auth-form hidden">
+      <div class="auth-header">
+        <div class="auth-icon">🚀</div>
+        <h2>สร้างบัญชีใหม่</h2>
+        <p>เริ่มต้นแสดงผลงานของคุณวันนี้</p>
+      </div>
+      <div class="form-group">
+        <label>ชื่อ-นามสกุล</label>
+        <input type="text" id="reg-name" placeholder="ชื่อของคุณ" />
+      </div>
+      <div class="form-group">
+        <label>อีเมล</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="reg-password" placeholder="อย่างน้อย 6 ตัวอักษร" />
+      </div>
+      <div id="reg-error" class="form-error hidden"></div>
+      <div id="reg-success" class="form-success hidden"></div>
+      <button class="btn-primary full" onclick="handleRegister()">
+        <span>สมัครสมาชิก</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP WRAPPER ══ -->
+<div id="app">
+
+  <!-- ══════════════════════════════════════
+       PAGE: LANDING
+  ══════════════════════════════════════ -->
+  <div id="page-landing" class="page">
+    <nav class="nav">
+      <div class="nav-brand">Portfolio<span>Hub</span></div>
+      <div class="nav-links">
+        <a href="#" onclick="showPage('explore')">สำรวจผลงาน</a>
+        <button class="btn-outline" onclick="openAuthModal()">เข้าสู่ระบบ / สมัคร</button>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-bg">
+        <div class="hero-blob b1"></div>
+        <div class="hero-blob b2"></div>
+        <div class="hero-blob b3"></div>
+        <div class="grid-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <div class="hero-badge">✦ แพลตฟอร์มผลงานสำหรับนักสร้างสรรค์</div>
+        <h1 class="hero-title">
+          แสดงให้โลกเห็น<br/>
+          <em>ความสามารถ</em><br/>
+          ของคุณ
+        </h1>
+        <p class="hero-sub">สร้าง Portfolio ส่วนตัว อัพโหลดโปรเจกต์ แสดง Skills<br/>และรับงานใหม่จากนายจ้างทั่วโลก</p>
+        <div class="hero-actions">
+          <button class="btn-hero-primary" onclick="openAuthModal(); switchTab('register')">
+            เริ่มต้นฟรี →
+          </button>
+          <button class="btn-hero-secondary" onclick="showPage('explore')">
+            ดูตัวอย่างผลงาน
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-num">2.4K+</span><span class="stat-label">นักสร้างสรรค์</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><span class="stat-num">12K+</span><span class="stat-label">ผลงาน</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><span class="stat-num">98%</span><span class="stat-label">ความพึงพอใจ</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="mockup-card">
+          <div class="mockup-header">
+            <div class="mockup-dots"><span></span><span></span><span></span></div>
+            <div class="mockup-url">portfoliohub.app/you</div>
+          </div>
+          <div class="mockup-avatar">
+            <div class="avatar-ring"></div>
+            <div class="avatar-img">👨‍💻</div>
+          </div>
+          <div class="mockup-name">Your Name</div>
+          <div class="mockup-title">Full Stack Developer</div>
+          <div class="mockup-tags">
+            <span>React</span><span>Node.js</span><span>Figma</span>
+          </div>
+          <div class="mockup-projects">
+            <div class="mini-project"></div>
+            <div class="mini-project"></div>
+            <div class="mini-project"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="features-header">
+        <div class="section-label">ทำไมต้องเลือก PortfolioHub</div>
+        <h2>ทุกอย่างที่คุณต้องการ<br/>ในที่เดียว</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>หน้า Portfolio ส่วนตัว</h3>
+          <p>URL เฉพาะของคุณ พร้อมธีมที่ปรับแต่งได้ ดูดีทุกอุปกรณ์</p>
+        </div>
+        <div class="feature-card featured">
+          <div class="feature-icon">📂</div>
+          <h3>จัดการโปรเจกต์</h3>
+          <p>อัพโหลดรูปภาพ ใส่ลิงก์ GitHub / Live Demo แท็ก Tech Stack</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>แสดง Skills</h3>
+          <p>แสดงความเชี่ยวชาญด้วย Progress Bar สวยงาม แยกหมวดหมู่ได้</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✉️</div>
+          <h3>รับข้อความติดต่อ</h3>
+          <p>ผู้ชมสามารถส่งข้อความถึงคุณได้โดยตรง ไม่ต้องเปิดเผยอีเมล</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>สถิติผลงาน</h3>
+          <p>ดูจำนวน Views และ Likes ของแต่ละโปรเจกต์แบบ Real-time</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>ควบคุมความเป็นส่วนตัว</h3>
+          <p>เลือกซ่อน/แสดงผลงานแต่ละชิ้น ตั้งค่าโปรไฟล์ Public/Private</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand">Portfolio<span>Hub</span></div>
+      <p>สร้างด้วย ❤️ สำหรับนักสร้างสรรค์ทุกคน</p>
+    </footer>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PAGE: DASHBOARD
+  ══════════════════════════════════════ -->
+  <div id="page-dashboard" class="page hidden">
+    <nav class="nav nav-dark">
+      <div class="nav-brand">Portfolio<span>Hub</span></div>
+      <div class="nav-links">
+        <a href="#" onclick="showPage('explore')">สำรวจ</a>
+        <a href="#" onclick="viewMyPortfolio()" class="btn-outline-sm">ดู Portfolio ของฉัน</a>
+        <div class="user-menu" onclick="toggleUserMenu()">
+          <div class="user-avatar" id="user-avatar-nav">?</div>
+          <div class="user-dropdown hidden" id="user-dropdown">
+            <div class="dropdown-info" id="dropdown-name">Loading...</div>
+            <hr/>
+            <a href="#" onclick="showPage('dashboard')">Dashboard</a>
+            <a href="#" onclick="showDashboardTab('profile')">แก้ไขโปรไฟล์</a>
+            <a href="#" onclick="showDashboardTab('messages')">ข้อความ</a>
+            <hr/>
+            <a href="#" onclick="handleLogout()" class="logout-link">ออกจากระบบ</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dashboard-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-profile">
+          <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+          <div class="sidebar-name" id="sidebar-name">Loading...</div>
+          <div class="sidebar-title" id="sidebar-job-title">เพิ่มตำแหน่งงาน</div>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#" class="sidebar-link active" data-tab="overview" onclick="showDashboardTab('overview')">
+            <span class="icon">📊</span> ภาพรวม
+          </a>
+          <a href="#" class="sidebar-link" data-tab="projects" onclick="showDashboardTab('projects')">
+            <span class="icon">📂</span> โปรเจกต์ของฉัน
+          </a>
+          <a href="#" class="sidebar-link" data-tab="skills" onclick="showDashboardTab('skills')">
+            <span class="icon">⚡</span> ทักษะ
+          </a>
+          <a href="#" class="sidebar-link" data-tab="messages" onclick="showDashboardTab('messages')">
+            <span class="icon">✉️</span> ข้อความ
+            <span class="badge hidden" id="msg-badge">0</span>
+          </a>
+          <a href="#" class="sidebar-link" data-tab="profile" onclick="showDashboardTab('profile')">
+            <span class="icon">👤</span> แก้ไขโปรไฟล์
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="btn-view-portfolio" onclick="viewMyPortfolio()">🔗 ดู Portfolio ของฉัน</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="dashboard-main">
+
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="dash-tab">
+          <div class="dash-header">
+            <h1 id="welcome-name">ยินดีต้อนรับ! 👋</h1>
+            <p>นี่คือภาพรวม Portfolio ของคุณ</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-icon">📂</div>
+              <div class="stat-card-value" id="stat-projects">0</div>
+              <div class="stat-card-label">โปรเจกต์</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon">⚡</div>
+              <div class="stat-card-value" id="stat-skills">0</div>
+              <div class="stat-card-label">ทักษะ</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon">👁️</div>
+              <div class="stat-card-value" id="stat-views">0</div>
+              <div class="stat-card-label">Views รวม</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon">✉️</div>
+              <div class="stat-card-value" id="stat-messages">0</div>
+              <div class="stat-card-label">ข้อความใหม่</div>
+            </div>
+          </div>
+          <div class="quick-actions">
+            <h3>เริ่มต้นอย่างรวดเร็ว</h3>
+            <div class="action-cards">
+              <div class="action-card" onclick="showDashboardTab('projects'); openProjectModal()">
+                <div class="action-icon">➕</div>
+                <div class="action-text">เพิ่มโปรเจกต์ใหม่</div>
+              </div>
+              <div class="action-card" onclick="showDashboardTab('skills')">
+                <div class="action-icon">⚡</div>
+                <div class="action-text">เพิ่มทักษะ</div>
+              </div>
+              <div class="action-card" onclick="showDashboardTab('profile')">
+                <div class="action-icon">✏️</div>
+                <div class="action-text">แก้ไขโปรไฟล์</div>
+              </div>
+              <div class="action-card" onclick="viewMyPortfolio()">
+                <div class="action-icon">🔗</div>
+                <div class="action-text">แชร์ Portfolio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECTS TAB -->
+        <div id="tab-projects" class="dash-tab hidden">
+          <div class="dash-header">
+            <div>
+              <h1>โปรเจกต์ของฉัน</h1>
+              <p>จัดการและแสดงผลงานทั้งหมดของคุณ</p>
+            </div>
+            <button class="btn-primary" onclick="openProjectModal()">+ เพิ่มโปรเจกต์</button>
+          </div>
+          <div id="projects-grid" class="projects-grid">
+            <div class="empty-state">
+              <div class="empty-icon">📂</div>
+              <h3>ยังไม่มีโปรเจกต์</h3>
+              <p>เริ่มเพิ่มโปรเจกต์แรกของคุณเลย!</p>
+              <button class="btn-primary" onclick="openProjectModal()">+ เพิ่มโปรเจกต์แรก</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKILLS TAB -->
+        <div id="tab-skills" class="dash-tab hidden">
+          <div class="dash-header">
+            <div>
+              <h1>ทักษะของฉัน</h1>
+              <p>แสดงความเชี่ยวชาญของคุณ</p>
+            </div>
+            <button class="btn-primary" onclick="openSkillModal()">+ เพิ่มทักษะ</button>
+          </div>
+          <div id="skills-list" class="skills-list">
+            <div class="empty-state">
+              <div class="empty-icon">⚡</div>
+              <h3>ยังไม่มีทักษะ</h3>
+              <p>เพิ่มทักษะเพื่อแสดงความสามารถของคุณ</p>
+              <button class="btn-primary" onclick="openSkillModal()">+ เพิ่มทักษะแรก</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESSAGES TAB -->
+        <div id="tab-messages" class="dash-tab hidden">
+          <div class="dash-header">
+            <h1>ข้อความ</h1>
+            <p>ข้อความที่ได้รับจาก Portfolio ของคุณ</p>
+          </div>
+          <div id="messages-list" class="messages-list">
+            <div class="empty-state">
+              <div class="empty-icon">✉️</div>
+              <h3>ยังไม่มีข้อความ</h3>
+              <p>เมื่อมีคนส่งข้อความถึงคุณ จะแสดงที่นี่</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="tab-profile" class="dash-tab hidden">
+          <div class="dash-header">
+            <h1>แก้ไขโปรไฟล์</h1>
+            <p>ข้อมูลที่จะแสดงใน Portfolio ของคุณ</p>
+          </div>
+          <div class="profile-form">
+            <div class="form-section">
+              <h3>ข้อมูลพื้นฐาน</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>ชื่อ-นามสกุล</label>
+                  <input type="text" id="prof-fullname" placeholder="ชื่อของคุณ" />
+                </div>
+                <div class="form-group">
+                  <label>ตำแหน่งงาน / อาชีพ</label>
+                  <input type="text" id="prof-title" placeholder="เช่น Full Stack Developer" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>เกี่ยวกับฉัน (Bio)</label>
+                <textarea id="prof-bio" rows="4" placeholder="เล่าเกี่ยวกับตัวคุณ ประสบการณ์ และความสนใจ..."></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>สถานที่</label>
+                  <input type="text" id="prof-location" placeholder="เช่น กรุงเทพฯ, ประเทศไทย" />
+                </div>
+                <div class="form-group">
+                  <label>เว็บไซต์</label>
+                  <input type="url" id="prof-website" placeholder="https://yoursite.com" />
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <h3>โซเชียลมีเดีย</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>GitHub URL</label>
+                  <input type="url" id="prof-github" placeholder="https://github.com/username" />
+                </div>
+                <div class="form-group">
+                  <label>LinkedIn URL</label>
+                  <input type="url" id="prof-linkedin" placeholder="https://linkedin.com/in/username" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Twitter / X URL</label>
+                <input type="url" id="prof-twitter" placeholder="https://twitter.com/username" />
+              </div>
+            </div>
+            <div class="form-section">
+              <h3>การมองเห็น</h3>
+              <label class="toggle-label">
+                <input type="checkbox" id="prof-public" checked />
+                <span class="toggle-slider"></span>
+                <span>โปรไฟล์แบบ Public (ทุกคนมองเห็นได้)</span>
+              </label>
+            </div>
+            <div id="profile-success" class="form-success hidden"></div>
+            <div id="profile-error" class="form-error hidden"></div>
+            <button class="btn-primary" onclick="saveProfile()">บันทึกโปรไฟล์</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PAGE: PUBLIC PORTFOLIO
+  ══════════════════════════════════════ -->
+  <div id="page-portfolio" class="page hidden">
+    <nav class="nav nav-transparent">
+      <div class="nav-brand">Portfolio<span>Hub</span></div>
+      <div class="nav-links">
+        <button class="btn-outline" onclick="showPage('landing')">← กลับหน้าหลัก</button>
+      </div>
+    </nav>
+
+    <div id="portfolio-content">
+      <!-- Dynamically generated -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PAGE: EXPLORE
+  ══════════════════════════════════════ -->
+  <div id="page-explore" class="page hidden">
+    <nav class="nav nav-dark">
+      <div class="nav-brand">Portfolio<span>Hub</span></div>
+      <div class="nav-links">
+        <button class="btn-outline" onclick="showPage('landing')">← กลับ</button>
+        <button class="btn-outline-sm" id="nav-auth-btn" onclick="openAuthModal()">เข้าสู่ระบบ</button>
+      </div>
+    </nav>
+    <div class="explore-section">
+      <div class="explore-header">
+        <h1>สำรวจผลงาน</h1>
+        <p>ค้นพบโปรเจกต์จากนักสร้างสรรค์ทั่วไทย</p>
+        <div class="search-bar">
+          <input type="text" id="explore-search" placeholder="ค้นหาโปรเจกต์..." onkeyup="filterProjects(this.value)" />
+          <span class="search-icon">🔍</span>
+        </div>
+      </div>
+      <div id="explore-grid" class="explore-grid">
+        <div class="loading-projects">กำลังโหลด...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══ PROJECT MODAL ══ -->
+<div id="project-modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeProjectModal()"></div>
+  <div class="modal-box modal-wide">
+    <button class="modal-close" onclick="closeProjectModal()">✕</button>
+    <h2 id="project-modal-title">เพิ่มโปรเจกต์ใหม่</h2>
+    <input type="hidden" id="project-edit-id" />
+    <div class="form-group">
+      <label>ชื่อโปรเจกต์ *</label>
+      <input type="text" id="project-title" placeholder="ชื่อโปรเจกต์ของคุณ" />
+    </div>
+    <div class="form-group">
+      <label>คำอธิบาย</label>
+      <textarea id="project-desc" rows="3" placeholder="อธิบายโปรเจกต์นี้..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>URL รูปภาพ (Thumbnail)</label>
+        <input type="url" id="project-thumbnail" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>หมวดหมู่</label>
+        <select id="project-category">
+          <option value="">เลือกหมวดหมู่</option>
+          <option value="web">Web Development</option>
+          <option value="mobile">Mobile App</option>
+          <option value="design">UI/UX Design</option>
+          <option value="data">Data Science</option>
+          <option value="ai">AI / Machine Learning</option>
+          <option value="game">Game Development</option>
+          <option value="other">อื่นๆ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Live Demo URL</label>
+        <input type="url" id="project-url" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>GitHub URL</label>
+        <input type="url" id="project-github" placeholder="https://github.com/..." />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Tech Stack (คั่นด้วยคอมมา)</label>
+      <input type="text" id="project-tech" placeholder="เช่น React, Node.js, PostgreSQL" />
+    </div>
+    <div class="form-row-check">
+      <label class="toggle-label">
+        <input type="checkbox" id="project-featured" />
+        <span class="toggle-slider"></span>
+        <span>แนะนำ (Featured)</span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="project-published" checked />
+        <span class="toggle-slider"></span>
+        <span>เผยแพร่</span>
+      </label>
+    </div>
+    <div id="project-error" class="form-error hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeProjectModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveProject()">บันทึกโปรเจกต์</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SKILL MODAL ══ -->
+<div id="skill-modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeSkillModal()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeSkillModal()">✕</button>
+    <h2>เพิ่มทักษะ</h2>
+    <input type="hidden" id="skill-edit-id" />
+    <div class="form-row">
+      <div class="form-group">
+        <label>ชื่อทักษะ *</label>
+        <input type="text" id="skill-name" placeholder="เช่น JavaScript" />
+      </div>
+      <div class="form-group">
+        <label>หมวดหมู่</label>
+        <select id="skill-category">
+          <option value="frontend">Frontend</option>
+          <option value="backend">Backend</option>
+          <option value="mobile">Mobile</option>
+          <option value="design">Design</option>
+          <option value="devops">DevOps</option>
+          <option value="database">Database</option>
+          <option value="other">อื่นๆ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>ระดับความเชี่ยวชาญ: <span id="skill-level-display">75</span>%</label>
+      <input type="range" id="skill-level" min="1" max="100" value="75"
+        oninput="document.getElementById('skill-level-display').textContent = this.value" />
+    </div>
+    <div id="skill-error" class="form-error hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSkillModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveSkill()">บันทึกทักษะ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTACT MODAL ══ -->
+<div id="contact-modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeContactModal()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeContactModal()">✕</button>
+    <h2>ส่งข้อความ</h2>
+    <p id="contact-to-name" style="color:var(--muted); margin-bottom:1.5rem;"></p>
+    <input type="hidden" id="contact-to-id" />
+    <div class="form-group">
+      <label>ชื่อของคุณ *</label>
+      <input type="text" id="contact-name" placeholder="ชื่อ-นามสกุล" />
+    </div>
+    <div class="form-group">
+      <label>อีเมลของคุณ *</label>
+      <input type="email" id="contact-email" placeholder="email@example.com" />
+    </div>
+    <div class="form-group">
+      <label>หัวข้อ</label>
+      <input type="text" id="contact-subject" placeholder="หัวข้อข้อความ" />
+    </div>
+    <div class="form-group">
+      <label>ข้อความ *</label>
+      <textarea id="contact-message" rows="4" placeholder="เขียนข้อความของคุณ..."></textarea>
+    </div>
+    <div id="contact-error" class="form-error hidden"></div>
+    <div id="contact-success" class="form-success hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeContactModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="sendContact()">ส่งข้อความ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/portfolio.js"></script>
+<script src="js/explore.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
