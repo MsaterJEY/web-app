@@ -60,7 +60,18 @@ export const SkillCards: React.FC = () => {
                 transition={{ delay: 0.2 + i * 0.1, type: 'spring', stiffness: 200 }}
                 whileHover={{ scale: 1.05, y: -8 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => { soundManager.skillSelect(); applySkill(card) }}
+                onClick={() => {
+                  soundManager.skillSelect()
+                  applySkill(card)
+                  // ถ้ายังมี level up รอ — random card ใหม่ทันที
+                  if (pendingLevelUps > 0) {
+                    const excluded = [...acquiredSkills.map(s => s.id), card.id]
+                    setTimeout(() => {
+                      setCards(drawSkillCards(3, excluded))
+                      soundManager.levelUp()
+                    }, 120)
+                  }
+                }}
                 onHoverStart={() => setHovered(card.id)}
                 onHoverEnd={() => setHovered(null)}
                 className="cursor-pointer relative"
