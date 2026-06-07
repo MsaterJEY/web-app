@@ -59,7 +59,7 @@ export const HUD: React.FC = () => {
       </div>
 
       {/* Status button */}
-      <div className="absolute top-1 right-1 z-50 pointer-events-auto">
+      <div className="absolute top-[3.30rem] right-1 z-50 pointer-events-auto">
         <button
           onClick={() => setShowStatus(o => !o)}
           className="px-2 py-0.5 rounded font-ui text-[9px] font-bold transition-all hover:scale-105"
