@@ -5,7 +5,6 @@ import { WEAPONS, WeaponType } from '../data/weapons'
 import { soundManager } from '../game/SoundManager'
 
 const STARTER_WEAPONS: WeaponType[] = ['sword', 'spear', 'wand']
-const DEV_PASSWORD = '1*j8*e6*y7*0'
 
 export const MenuScreen: React.FC = () => {
   const { startGame, highScore, bestStage, setDevMode, devMode } = useGameStore()
@@ -20,12 +19,16 @@ export const MenuScreen: React.FC = () => {
   const toggleMute = () => { const next = !muted; setMuted(next); soundManager.setEnabled(!next); if (!next) soundManager.click() }
 
   const handleConsoleSubmit = () => {
-    if (consoleInput.trim().toLowerCase() === DEV_PASSWORD) {
+    const cmd = consoleInput.trim()
+    if (cmd === '/devModeOn') {
       setDevMode(true)
       setConsoleMsg('✅ Dev Mode ON!')
       soundManager.levelUp()
+    } else if (cmd === '/devModeOff') {
+      setDevMode(false)
+      setConsoleMsg('❌ Dev Mode OFF')
     } else {
-      setConsoleMsg('❌ Invalid password')
+      setConsoleMsg('❌ คำสั่งไม่ถูกต้อง')
     }
     setConsoleInput('')
   }
@@ -131,11 +134,11 @@ export const MenuScreen: React.FC = () => {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden mt-2">
               <div className="p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(124,58,237,0.4)', width: 280 }}>
-                <div className="font-ui text-purple-400 text-xs mb-2">🖥️ ป้อนรหัสเข้าโหมด Dev</div>
+                <div className="font-ui text-purple-400 text-xs mb-2">🖥️ พิมพ์คำสั่ง Dev Mode</div>
                 <div className="flex gap-2">
-                  <input ref={inputRef} type="password" value={consoleInput} onChange={e => setConsoleInput(e.target.value)}
+                  <input ref={inputRef} type="text" value={consoleInput} onChange={e => setConsoleInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleConsoleSubmit()}
-                    placeholder="รหัสผ่าน..."
+                    placeholder="/devModeOn หรือ /devModeOff"
                     className="flex-1 rounded px-2 py-1 text-xs font-ui outline-none"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(124,58,237,0.4)', color: '#e9d5ff' }} />
                   <button onClick={handleConsoleSubmit}

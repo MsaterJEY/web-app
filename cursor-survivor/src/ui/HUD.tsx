@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useGameStore } from '../game/store'
 import { WEAPONS } from '../data/weapons'
 
 export const HUD: React.FC = () => {
-  const { playerStats, level, xp, xpRequired, stage, score, killCount, selectedWeapon, pendingXP, devMode } = useGameStore()
+  const { playerStats, level, xp, xpRequired, stage, score, killCount, selectedWeapon, pendingXP, devMode, acquiredSkills } = useGameStore()
+  const [showStatus, setShowStatus] = useState(false)
   const weapon = WEAPONS[selectedWeapon]
   const xpPct = Math.min(100, (xp / xpRequired) * 100)
   const hpPct = Math.min(100, (playerStats.hp / playerStats.maxHp) * 100)
@@ -57,6 +58,17 @@ export const HUD: React.FC = () => {
         </div>
       </div>
 
+      {/* Status button */}
+      <div className="absolute top-1 right-1 z-50 pointer-events-auto">
+        <button
+          onClick={() => setShowStatus(o => !o)}
+          className="px-2 py-0.5 rounded font-ui text-[9px] font-bold transition-all hover:scale-105"
+          style={{ background: showStatus ? 'rgba(168,85,247,0.5)' : 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.5)', color: '#d8b4fe' }}
+        >
+          {showStatus ? '✕' : '📊'} Status
+        </button>
+      </div>
+
       {/* Element badges */}
       <div className="flex gap-1 px-2 pt-0.5 flex-wrap">
         {playerStats.fireLevel > 0      && <Badge icon="🔥" label={`Lv${playerStats.fireLevel}`}      color="#ff4500" />}
@@ -69,8 +81,54 @@ export const HUD: React.FC = () => {
         {playerStats.earthLevel > 0     && <Badge icon="🪨" label={`Lv${playerStats.earthLevel}`}     color="#a0522d" />}
       </div>
     </div>
+      {/* Status Panel */}
+      {showStatus && (
+        <div className="pointer-events-auto absolute top-12 right-2 z-50 rounded-xl overflow-hidden"
+          style={{ width: 260, background: 'rgba(5,5,20,0.95)', border: '1px solid rgba(168,85,247,0.4)', backdropFilter: 'blur(8px)' }}>
+          <div className="px-3 py-2 font-ui text-purple-300 text-xs font-bold border-b border-purple-900/40">
+            📊 สถานะตัวละคร
+          </div>
+          <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] font-ui border-b border-purple-900/40">
+            <StatRow label="ATK DMG" value={`×${playerStats.attackDamage.toFixed(2)}`} />
+            <StatRow label="ATK SPD" value={`×${playerStats.attackSpeed.toFixed(2)}`} />
+            <StatRow label="CRIT" value={`${(playerStats.critRate*100).toFixed(0)}% ×${playerStats.critDamage.toFixed(1)}`} />
+            <StatRow label="AREA" value={`×${playerStats.areaDamage.toFixed(2)}`} />
+            <StatRow label="XP GAIN" value={`×${playerStats.xpGain.toFixed(2)}`} />
+            <StatRow label="RANGE" value={`${playerStats.auraRange}`} />
+          </div>
+          <div className="p-3">
+            <div className="text-[9px] font-ui text-gray-500 mb-1.5">สกิลที่เลือกแล้ว ({acquiredSkills.length})</div>
+            {acquiredSkills.length === 0 && <div className="text-[10px] font-ui text-gray-600">— ยังไม่มีสกิล —</div>}
+            <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+              {Object.entries(
+                acquiredSkills.reduce<Record<string, { icon: string; count: number }>>((acc, s) => {
+                  if (acc[s.id]) acc[s.id].count++
+                  else acc[s.id] = { icon: s.icon, count: 1 }
+                  return acc
+                }, {})
+              ).map(([id, { icon, count }]) => {
+                const skill = acquiredSkills.find(s => s.id === id)!
+                return (
+                  <div key={id} className="flex items-center justify-between px-2 py-1 rounded"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    <span className="text-[10px] font-ui text-gray-300">{icon} {skill.nameTH}</span>
+                    <span className="text-[10px] font-ui text-purple-400 font-bold">×{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
   )
 }
+
+const StatRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex justify-between">
+    <span className="text-gray-500">{label}</span>
+    <span className="text-purple-300 font-bold">{value}</span>
+  </div>
+)
 
 const Badge: React.FC<{ icon: string; label: string; color: string }> = ({ icon, label, color }) => (
   <div className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] md:text-[10px] font-ui"

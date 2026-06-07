@@ -4,7 +4,6 @@ import { useGameStore } from '../game/store'
 import { drawSkillCards } from '../player/SkillSystem'
 import { SkillCard } from '../data/skills'
 import { getRarityColor, getRarityGlow } from '../player/SkillSystem'
-import { soundManager } from '../game/SoundManager'
 
 export const SkillCards: React.FC = () => {
   const { phase, level, acquiredSkills, applySkill, pendingLevelUps } = useGameStore()
@@ -61,7 +60,6 @@ export const SkillCards: React.FC = () => {
                 whileHover={{ scale: 1.05, y: -8 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
-                  soundManager.skillSelect()
                   applySkill(card)
                   // ถ้ายังมี level up รอ — random card ใหม่ทันที
                   if (pendingLevelUps > 0) {

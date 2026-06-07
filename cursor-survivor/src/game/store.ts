@@ -206,10 +206,20 @@ export const useGameStore = create<GameState>()(
 
       nextStage: () => {
         const state = get()
-        // Collect XP after stage complete then advance
         const newStage = state.stage + 1
-        set({ stage: newStage })
-        get().collectPendingXP()
+        if (newStage > 30) {
+          // เคลียร์ครบ 30 stage → แสดงหน้าสรุปคะแนน
+          const isNewScore = state.score > state.highScore
+          const isNewStage = state.stage > state.bestStage
+          set({
+            phase: 'victory',
+            highScore: isNewScore ? state.score : state.highScore,
+            bestStage: isNewStage ? state.stage : state.bestStage,
+          })
+        } else {
+          set({ stage: newStage })
+          get().collectPendingXP()
+        }
       },
 
       addKill: (xp) => {
