@@ -44,8 +44,9 @@ export interface GameState {
   devSetStage: (n: number) => void
   devSetLevel: (n: number) => void
   devSetHP: (n: number) => void
-  devGodMode: () => void
+  devGodMode: (v: boolean) => void
   devKillAll: () => void
+  devResetAll: () => void
 }
 
 export const BASE_STATS: PlayerStats = {
@@ -218,8 +219,20 @@ export const useGameStore = create<GameState>()(
       devSetStage:  (n) => set({ stage: n }),
       devSetLevel:  (n) => set({ level: n, xpRequired: calcXPRequired(n) }),
       devSetHP:     (n) => set(s => ({ playerStats: { ...s.playerStats, hp: n, maxHp: Math.max(n, s.playerStats.maxHp) } })),
-      devGodMode:   ()  => set({ devMode: true }),
+      devGodMode:   (v) => set({ devMode: v }),
       devKillAll:   ()  => { /* signal handled in Game.tsx via devMode flag */ },
+      devResetAll: () => set((state) => ({
+        stage: 1,
+        level: 1,
+        xp: 0,
+        xpRequired: 100,
+        score: 0,
+        killCount: 0,
+        playerStats: { ...BASE_STATS },
+        acquiredSkills: [],
+        pendingXP: 0,
+        devMode: false // ปิดอมตะไปด้วยพร้อมกัน
+      })),
     }),
     {
       name: 'cursor-survivor-save',

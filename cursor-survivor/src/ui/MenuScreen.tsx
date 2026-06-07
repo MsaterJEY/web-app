@@ -22,10 +22,10 @@ export const MenuScreen: React.FC = () => {
   const handleConsoleSubmit = () => {
     if (consoleInput.trim().toLowerCase() === DEV_PASSWORD) {
       setDevMode(true)
-      setConsoleMsg('✅ Dev Mode เปิดใช้งาน!')
+      setConsoleMsg('✅ Dev Mode ON!')
       soundManager.levelUp()
     } else {
-      setConsoleMsg('❌ รหัสไม่ถูกต้อง')
+      setConsoleMsg('❌ Invalid password')
     }
     setConsoleInput('')
   }

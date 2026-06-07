@@ -6,15 +6,19 @@ interface LogEntry { text: string; type: 'info' | 'success' | 'error' | 'system'
 
 const HELP_TEXT = `
 คำสั่งที่ใช้ได้:
-  god        — เปิด God Mode (ไม่รับดาเมจ)
-  stage [n]  — ข้ามไป Stage n
-  level [n]  — ตั้ง Level เป็น n
-  hp [n]     — ตั้ง HP เป็น n
-  xp [n]     — เพิ่ม XP n หน่วย
-  killall    — ฆ่าศัตรูทั้งหมด
-  boss       — เรียก Boss ทันที
-  clear      — ล้างหน้าจอ
-  help       — แสดงคำสั่ง
+  god on/off     — เปิด/ปิด God Mode (อมตะ)
+  set stage [n]  — ตั้งค่าไป Stage ที่ต้องการ
+  next stage     — ข้ามไป Stage ถัดไป
+  back stage     — ย้อนกลับไป Stage ก่อนหน้า
+  resetstg       — รีเซ็ต Stage กลับไปที่ 1
+  set level [n]  — ตั้งค่า Level ที่ต้องการ
+  resetlv        — รีเซ็ต เลเวล กลับไปที่ 1
+  get xp [n]     — รับแต้ม XP ตามจำนวนที่ระบุ
+  killall        — ทำลายศัตรูทั้งหมดในฉาก
+  killp          — ฆ่าตัวตาย (ลด HP ตัวเอง)
+  adboss         — เรียกบอสออกมา (Spawn Boss)
+  clearcht       — ล้างหน้าจอ Console
+  resetall       — รีเซ็ตค่าทุกอย่างของตัวละคร/เกม
 `.trim()
 
 export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => void }> = ({ onKillAll, onSpawnBoss }) => {
@@ -43,51 +47,110 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
     if (!cmd) return
     addLog(`> ${raw}`, 'system')
 
+    // แตกคำสั่งด้วยช่องว่าง เช่น "set stage 5" -> c = "set", args = ["stage", "5"]
     const [c, ...args] = cmd.split(/\s+/)
 
     switch (c) {
+      // ─── GOD MODE ───
+      case 'god':
+        if (args[0] === 'on') {
+          // หาก store มีฟังก์ชันเปิดเฉพาะ หรือใช้ฟังก์ชันเดิมร่วมกับเช็คสถานะ
+          store.devGodMode(true) 
+          addLog('✅ God Mode ON — เป็นอมตะ', 'success')
+        } else if (args[0] === 'off') {
+          store.devGodMode(false)
+          addLog('❌ God Mode OFF — ปิดโหมดอมตะ', 'error')
+        } else {
+          addLog('⚠️ ใช้: god on หรือ god off', 'info')
+        }
+        break
+
+      // ─── STAGE COMMANDS ───
+      case 'set':
+        // ตรวจสอบว่าเป็นคำสั่ง set stage หรือ set level
+        if (args[0] === 'stage') {
+          const n = parseInt(args[1])
+          if (!isNaN(n) && n >= 1) { store.devSetStage(n); addLog(`✅ Set Stage → ${n}`, 'success') }
+          else addLog('❌ ใช้: set stage [number]', 'error')
+        } else if (args[0] === 'level') {
+          const n = parseInt(args[1])
+          if (!isNaN(n) && n >= 1) { store.devSetLevel(n); addLog(`✅ Set Level → ${n}`, 'success') }
+          else addLog('❌ ใช้: set level [number]', 'error')
+        } else {
+          addLog('⚠️ ไม่รู้จักคำสั่งย่อยของ set', 'error')
+        }
+        break
+
+      case 'next':
+        if (args[0] === 'stage') {
+          store.devSetStage(store.stage + 1)
+          addLog(`✅ Next Stage → ${store.stage + 1}`, 'success')
+        }
+        break
+
+      case 'back':
+        if (args[0] === 'stage') {
+          const prevStage = Math.max(1, store.stage - 1)
+          store.devSetStage(prevStage)
+          addLog(`✅ Back Stage → ${prevStage}`, 'success')
+        }
+        break
+
+      case 'resetstg':
+        store.devSetStage(1)
+        addLog('✅ รีเซ็ต Stage กลับไปที่ 1', 'success')
+        break
+
+      case 'resetlv':
+        store.devSetLevel(1)
+        addLog('✅ รีเซ็ต Level กลับไปที่ 1', 'success')
+        break
+
+      // ─── XP COMMANDS ───
+      case 'get':
+        if (args[0] === 'xp') {
+          const n = parseInt(args[1])
+          if (!isNaN(n) && n > 0) { store.gainXP(n); addLog(`✅ +${n} XP`, 'success') }
+          else addLog('❌ ใช้: get xp [number]', 'error')
+        } else {
+          addLog('⚠️ ใช้: get xp [number]', 'error')
+        }
+        break
+
+      // ─── ACTION COMMANDS ───
+      case 'killall':
+        onKillAll()
+        addLog('✅ ทำลายศัตรูทั้งหมดในฉาก', 'success')
+        break
+
+      case 'killp':
+        store.devSetHP(0) // ตั้งค่า HP ตัวเองให้เป็น 0 เพื่อจบเกม/ฆ่าตัวตาย
+        addLog('☠️ คุณได้ทำการฆ่าตัวตาย', 'error')
+        break
+
+      case 'adboss':
+        onSpawnBoss()
+        addLog('👾 Spawn Boss สำเร็จ!', 'success')
+        break
+
+      case 'clearcht':
+        setLog([{ text: '🖥️  Dev Console cleared', type: 'system' }])
+        break
+
+      case 'resetall':
+        // เรียกฟังก์ชันรีเซ็ตทั้งหมดใน Store ของคุณ (ถ้ามี)
+        store.devSetStage(1)
+        store.devSetLevel(1)
+        store.devSetHP(store.playerStats.maxHp)
+        // บันทึกลง Log
+        addLog('🔄 รีเซ็ตค่าทุกอย่างในเกมกลับสู่เริ่มต้นแล้ว', 'system')
+        break
+
+      // คำสั่งเก่าที่ไม่ได้ใช้แล้ว หรือพิมพ์ผิด
       case 'help':
         HELP_TEXT.split('\n').forEach(l => addLog(l, 'info'))
         break
-      case 'clear':
-        setLog([{ text: '🖥️  Dev Console cleared', type: 'system' }])
-        break
-      case 'god':
-        store.devGodMode()
-        addLog('✅ God Mode ON — ไม่รับดาเมจ', 'success')
-        break
-      case 'stage': {
-        const n = parseInt(args[0])
-        if (!isNaN(n) && n >= 1) { store.devSetStage(n); addLog(`✅ Stage → ${n}`, 'success') }
-        else addLog('❌ ใช้: stage [number]', 'error')
-        break
-      }
-      case 'level': {
-        const n = parseInt(args[0])
-        if (!isNaN(n) && n >= 1) { store.devSetLevel(n); addLog(`✅ Level → ${n}`, 'success') }
-        else addLog('❌ ใช้: level [number]', 'error')
-        break
-      }
-      case 'hp': {
-        const n = parseInt(args[0])
-        if (!isNaN(n) && n > 0) { store.devSetHP(n); addLog(`✅ HP → ${n}`, 'success') }
-        else addLog('❌ ใช้: hp [number]', 'error')
-        break
-      }
-      case 'xp': {
-        const n = parseInt(args[0])
-        if (!isNaN(n) && n > 0) { store.gainXP(n); addLog(`✅ +${n} XP (pending)`, 'success') }
-        else addLog('❌ ใช้: xp [number]', 'error')
-        break
-      }
-      case 'killall':
-        onKillAll()
-        addLog('✅ ฆ่าศัตรูทั้งหมด', 'success')
-        break
-      case 'boss':
-        onSpawnBoss()
-        addLog('✅ Spawn Boss!', 'success')
-        break
+
       default:
         addLog(`❌ ไม่รู้จักคำสั่ง: ${c}`, 'error')
     }
