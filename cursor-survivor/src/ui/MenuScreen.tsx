@@ -5,7 +5,7 @@ import { WEAPONS, WeaponType } from '../data/weapons'
 import { soundManager } from '../game/SoundManager'
 
 const STARTER_WEAPONS: WeaponType[] = ['sword', 'spear', 'wand']
-const DEV_PASSWORD = 'dev'
+const DEV_PASSWORD = '1*j8*e6*y7*0'
 
 export const MenuScreen: React.FC = () => {
   const { startGame, highScore, bestStage, setDevMode, devMode } = useGameStore()
