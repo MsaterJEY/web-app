@@ -4,6 +4,7 @@ import { useGameStore } from '../game/store'
 import { drawSkillCards } from '../player/SkillSystem'
 import { SkillCard } from '../data/skills'
 import { getRarityColor, getRarityGlow } from '../player/SkillSystem'
+import { soundManager } from '../game/SoundManager'
 
 export const SkillCards: React.FC = () => {
   const { phase, level, acquiredSkills, applySkill } = useGameStore()
@@ -14,6 +15,7 @@ export const SkillCards: React.FC = () => {
     if (phase === 'levelup') {
       const excluded = acquiredSkills.map(s => s.id)
       setCards(drawSkillCards(3, excluded))
+      soundManager.levelUp()
     }
   }, [phase])
 
@@ -56,7 +58,7 @@ export const SkillCards: React.FC = () => {
                 transition={{ delay: 0.2 + i * 0.1, type: 'spring', stiffness: 200 }}
                 whileHover={{ scale: 1.05, y: -8 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => applySkill(card)}
+                onClick={() => { soundManager.skillSelect(); applySkill(card) }}
                 onHoverStart={() => setHovered(card.id)}
                 onHoverEnd={() => setHovered(null)}
                 className="cursor-pointer relative"

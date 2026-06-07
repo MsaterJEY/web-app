@@ -6,22 +6,18 @@ import { SkillCards } from './ui/SkillCards'
 import { PauseOverlay } from './ui/PauseOverlay'
 import { MenuScreen } from './ui/MenuScreen'
 import { GameOverScreen } from './ui/GameOverScreen'
+import { ElementPickScreen } from './ui/ElementPickScreen'
 
 export default function App() {
   const { phase } = useGameStore()
+  const showCanvas = phase !== 'menu' && phase !== 'element_pick'
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
-      {/* Game canvas always rendered when not on menu */}
-      {phase !== 'menu' && <GameCanvas />}
-
-      {/* Menu */}
+      {showCanvas && <GameCanvas />}
       {phase === 'menu' && <MenuScreen />}
-
-      {/* HUD - shown during gameplay and pause */}
+      {phase === 'element_pick' && <ElementPickScreen />}
       {(phase === 'playing' || phase === 'paused' || phase === 'levelup') && <HUD />}
-
-      {/* Overlays */}
       <SkillCards />
       <PauseOverlay />
       <GameOverScreen />

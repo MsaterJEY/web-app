@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { WeaponType, WEAPONS } from '../data/weapons'
-import { SkillCard, SkillEffect } from '../data/skills'
+import { SkillCard, SkillEffect, ElementType } from '../data/skills'
 
-export type GamePhase = 'menu' | 'playing' | 'levelup' | 'paused' | 'gameover' | 'victory'
+export type GamePhase = 'menu' | 'element_pick' | 'playing' | 'levelup' | 'paused' | 'gameover' | 'victory'
 
 export interface PlayerStats {
   hp: number
@@ -42,14 +42,16 @@ export interface GameState {
   acquiredSkills: SkillCard[]
   highScore: number
   bestStage: number
+  pendingWeapon: WeaponType | null
 
-  // Actions
   setPhase: (phase: GamePhase) => void
   startGame: (weapon: WeaponType) => void
+  pickElement: (element: ElementType) => void
   gainXP: (amount: number) => void
   levelUp: () => void
   applySkill: (skill: SkillCard) => void
   takeDamage: (amount: number) => void
+  healPlayer: (amount: number) => void
   nextStage: () => void
   addKill: (xp: number) => void
   resetGame: () => void
@@ -57,63 +59,67 @@ export interface GameState {
 }
 
 const BASE_STATS: PlayerStats = {
-  hp: 200,
-  maxHp: 200,
-  defense: 0,
-  attackDamage: 1.0,
-  attackSpeed: 1.0,
-  areaDamage: 1.0,
-  critRate: 0.05,
-  critDamage: 1.5,
-  xpGain: 1.0,
-  auraRange: 80,
-  enemyDmgReduction: 0,
-  enemySpeedReduction: 0,
-  bossReduction: 0,
-  fireLevel: 0,
-  waterLevel: 0,
-  earthLevel: 0,
-  windLevel: 0,
-  lightningLevel: 0,
-  lightLevel: 0,
-  darkLevel: 0,
-  poisonLevel: 0,
+  hp: 200, maxHp: 200, defense: 0,
+  attackDamage: 1.0, attackSpeed: 1.0, areaDamage: 1.0,
+  critRate: 0.05, critDamage: 1.5, xpGain: 1.0, auraRange: 80,
+  enemyDmgReduction: 0, enemySpeedReduction: 0, bossReduction: 0,
+  fireLevel: 0, waterLevel: 0, earthLevel: 0, windLevel: 0,
+  lightningLevel: 0, lightLevel: 0, darkLevel: 0, poisonLevel: 0,
 }
 
 function calcXPRequired(level: number): number {
   return Math.floor(100 * Math.pow(1.5, level - 1))
 }
 
+function applyElementToStats(stats: PlayerStats, element: ElementType): PlayerStats {
+  const s = { ...stats }
+  switch (element) {
+    case 'fire':      s.fireLevel = 1; break
+    case 'water':     s.waterLevel = 1; break
+    case 'earth':     s.earthLevel = 1; break
+    case 'wind':      s.windLevel = 1; break
+    case 'lightning': s.lightningLevel = 1; break
+    case 'light':     s.lightLevel = 1; break
+    case 'dark':      s.darkLevel = 1; break
+    case 'poison':    s.poisonLevel = 1; break
+  }
+  return s
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       phase: 'menu',
-      stage: 1,
-      level: 1,
-      xp: 0,
-      xpRequired: 100,
-      score: 0,
-      killCount: 0,
+      stage: 1, level: 1, xp: 0, xpRequired: 100,
+      score: 0, killCount: 0,
       selectedWeapon: 'sword',
       playerStats: { ...BASE_STATS },
       acquiredSkills: [],
-      highScore: 0,
-      bestStage: 0,
+      highScore: 0, bestStage: 0,
+      pendingWeapon: null,
 
       setPhase: (phase) => set({ phase }),
 
       startGame: (weapon) => {
+        if (weapon === 'wand') {
+          set({ pendingWeapon: weapon, phase: 'element_pick' })
+        } else {
+          set({
+            phase: 'playing', stage: 1, level: 1, xp: 0, xpRequired: 100,
+            score: 0, killCount: 0, selectedWeapon: weapon,
+            playerStats: { ...BASE_STATS }, acquiredSkills: [], pendingWeapon: null,
+          })
+        }
+      },
+
+      pickElement: (element) => {
+        const state = get()
+        const weapon = state.pendingWeapon ?? 'wand'
+        const stats = applyElementToStats({ ...BASE_STATS }, element)
         set({
-          phase: 'playing',
-          stage: 1,
-          level: 1,
-          xp: 0,
-          xpRequired: 100,
-          score: 0,
-          killCount: 0,
-          selectedWeapon: weapon,
-          playerStats: { ...BASE_STATS },
-          acquiredSkills: [],
+          phase: 'playing', stage: 1, level: 1, xp: 0, xpRequired: 100,
+          score: 0, killCount: 0, selectedWeapon: weapon,
+          playerStats: stats, acquiredSkills: [], pendingWeapon: null,
         })
       },
 
@@ -132,18 +138,13 @@ export const useGameStore = create<GameState>()(
       levelUp: () => {
         const state = get()
         const newLevel = state.level + 1
-        set({
-          level: newLevel,
-          xpRequired: calcXPRequired(newLevel),
-          phase: 'levelup',
-        })
+        set({ level: newLevel, xpRequired: calcXPRequired(newLevel), phase: 'levelup' })
       },
 
       applySkill: (skill) => {
         const state = get()
         const stats = { ...state.playerStats }
         const eff = skill.effect as Partial<SkillEffect>
-
         if (eff.attackDamage) stats.attackDamage += eff.attackDamage
         if (eff.attackSpeed) stats.attackSpeed += eff.attackSpeed
         if (eff.areaDamage) stats.areaDamage += eff.areaDamage
@@ -164,12 +165,7 @@ export const useGameStore = create<GameState>()(
         if (eff.lightLevel) stats.lightLevel = Math.min(5, stats.lightLevel + eff.lightLevel)
         if (eff.darkLevel) stats.darkLevel = Math.min(5, stats.darkLevel + eff.darkLevel)
         if (eff.poisonLevel) stats.poisonLevel = Math.min(5, stats.poisonLevel + eff.poisonLevel)
-
-        set({
-          playerStats: stats,
-          acquiredSkills: [...state.acquiredSkills, skill],
-          phase: 'playing',
-        })
+        set({ playerStats: stats, acquiredSkills: [...state.acquiredSkills, skill], phase: 'playing' })
       },
 
       takeDamage: (amount) => {
@@ -179,23 +175,21 @@ export const useGameStore = create<GameState>()(
         dmg = Math.max(1, Math.floor(dmg))
         const newHp = stats.hp - dmg
         if (newHp <= 0) {
-          const hs = Math.max(state.highScore, state.score)
-          const bs = Math.max(state.bestStage, state.stage)
-          set({
-            playerStats: { ...stats, hp: 0 },
-            phase: 'gameover',
-            highScore: hs,
-            bestStage: bs,
-          })
+          set({ playerStats: { ...stats, hp: 0 }, phase: 'gameover',
+            highScore: Math.max(state.highScore, state.score),
+            bestStage: Math.max(state.bestStage, state.stage) })
         } else {
           set({ playerStats: { ...stats, hp: newHp } })
         }
       },
 
-      nextStage: () => {
+      healPlayer: (amount) => {
         const state = get()
-        set({ stage: state.stage + 1 })
+        const stats = state.playerStats
+        set({ playerStats: { ...stats, hp: Math.min(stats.maxHp, stats.hp + amount) } })
       },
+
+      nextStage: () => set(s => ({ stage: s.stage + 1 })),
 
       addKill: (xp) => {
         const state = get()
@@ -203,19 +197,11 @@ export const useGameStore = create<GameState>()(
         get().gainXP(xp)
       },
 
-      resetGame: () => {
-        set({
-          phase: 'menu',
-          stage: 1,
-          level: 1,
-          xp: 0,
-          xpRequired: 100,
-          score: 0,
-          killCount: 0,
-          playerStats: { ...BASE_STATS },
-          acquiredSkills: [],
-        })
-      },
+      resetGame: () => set({
+        phase: 'menu', stage: 1, level: 1, xp: 0, xpRequired: 100,
+        score: 0, killCount: 0, playerStats: { ...BASE_STATS },
+        acquiredSkills: [], pendingWeapon: null,
+      }),
 
       setWeapon: (weapon) => set({ selectedWeapon: weapon }),
     }),

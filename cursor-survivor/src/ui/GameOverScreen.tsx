@@ -1,9 +1,14 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../game/store'
+import { soundManager } from '../game/SoundManager'
 
 export const GameOverScreen: React.FC = () => {
   const { phase, score, stage, level, killCount, highScore, bestStage, acquiredSkills, resetGame, startGame, selectedWeapon } = useGameStore()
+
+  useEffect(() => {
+    if (phase === 'gameover') soundManager.gameOver()
+  }, [phase])
 
   if (phase !== 'gameover') return null
 

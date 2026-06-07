@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../game/store'
+import { soundManager } from '../game/SoundManager'
 
 export const PauseOverlay: React.FC = () => {
   const { phase, setPhase, resetGame, score, stage, level, killCount } = useGameStore()
@@ -41,14 +42,14 @@ export const PauseOverlay: React.FC = () => {
 
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => setPhase('playing')}
+              onClick={() => { soundManager.click(); setPhase('playing') }}
               className="px-8 py-3 rounded-lg font-ui font-bold text-sm transition-all hover:scale-105"
               style={{ background: 'linear-gradient(90deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
             >
               ▶ เล่นต่อ
             </button>
             <button
-              onClick={resetGame}
+              onClick={() => { soundManager.click(); resetGame() }}
               className="px-8 py-3 rounded-lg font-ui font-bold text-sm transition-all hover:scale-105"
               style={{ background: 'rgba(255,255,255,0.05)', color: '#aaa', border: '1px solid rgba(255,255,255,0.1)' }}
             >
