@@ -4,6 +4,7 @@ import { useGameStore } from '../game/store'
 import { drawSkillCards } from '../player/SkillSystem'
 import { SkillCard } from '../data/skills'
 import { getRarityColor, getRarityGlow } from '../player/SkillSystem'
+import { soundManager } from '../game/SoundManager'
 
 export const SkillCards: React.FC = () => {
   const { phase, level, acquiredSkills, applySkill, pendingLevelUps } = useGameStore()
