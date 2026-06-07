@@ -138,7 +138,6 @@ export const MenuScreen: React.FC = () => {
                 <div className="flex gap-2">
                   <input ref={inputRef} type="text" value={consoleInput} onChange={e => setConsoleInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleConsoleSubmit()}
-                    placeholder="/devModeOn หรือ /devModeOff"
                     className="flex-1 rounded px-2 py-1 text-xs font-ui outline-none"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(124,58,237,0.4)', color: '#e9d5ff' }} />
                   <button onClick={handleConsoleSubmit}
