@@ -219,23 +219,15 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
             {/* Quick buttons */}
             <div className="flex gap-1.5 px-2 py-1" style={{ borderTop: '1px solid #7c3aed33' }}>
               {[
-                { label: 'God ON', cmd: 'god on' },
-                { label: 'God OFF', cmd: 'god off' },
-                { label: '+1K XP', cmd: 'get xp 1000' },[cite: 3]
-                { label: 'Kill All', cmd: 'killall' },[cite: 3]
-                { label: 'Boss!', cmd: 'adboss' },[cite: 3]
-                // ✅ แก้ไขตรงนี้: ปรับให้ cmd เรียกใช้ข้อมูล stage ล่าสุด ณ วินาทีที่กดจริง
-                { label: 'Stg+1', cmd: () => `stage ${(store?.stage ?? 0) + 1}` }, 
+                { label: 'God', cmd: 'god' },
+                { label: '+1K XP', cmd: 'xp 1000' },
+                { label: 'Kill All', cmd: 'killall' },
+                { label: 'Boss!', cmd: 'boss' },
+                { label: 'Stg+1', cmd: `stage ${store.stage + 1}` },
               ].map(btn => (
-                <button 
-                  key={btn.label} 
-                  onClick={() => { 
-                    // ✅ ตรวจสอบว่า cmd เป็นฟังก์ชัน หรือเป็นข้อความธรรมดา ก่อนส่งไปทำงาน
-                    const finalCommand = typeof btn.cmd === 'function' ? btn.cmd() : btn.cmd;
-                    runCommand(finalCommand); 
-                    setInput(''); 
-                  }}
-                >
+                <button key={btn.label} onClick={() => { runCommand(btn.cmd); setInput('') }}
+                  className="text-[10px] font-ui px-2 py-0.5 rounded transition-all hover:scale-105"
+                  style={{ background: 'rgba(124,58,237,0.3)', border: '1px solid #7c3aed55', color: '#c4b5fd' }}>
                   {btn.label}
                 </button>
               ))}
