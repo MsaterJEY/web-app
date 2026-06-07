@@ -47,6 +47,7 @@ export interface GameState {
   devGodMode: (v: boolean) => void
   devKillAll: () => void
   devResetAll: () => void
+  devSetStat: (key: 'attackSpeed' | 'attackDamage' | 'auraRange', value: number) => void
 }
 
 export const BASE_STATS: PlayerStats = {
@@ -221,6 +222,7 @@ export const useGameStore = create<GameState>()(
       devSetHP:     (n) => set(s => ({ playerStats: { ...s.playerStats, hp: n, maxHp: Math.max(n, s.playerStats.maxHp) } })),
       devGodMode:   (v) => set({ devMode: v }),
       devKillAll:   ()  => { /* signal handled in Game.tsx via devMode flag */ },
+      devSetStat: (key, value) => set(s => ({ playerStats: { ...s.playerStats, [key]: value } })),
       devResetAll: () => set((state) => ({
         stage: 1,
         level: 1,

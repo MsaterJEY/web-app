@@ -402,7 +402,7 @@ export const GameCanvas: React.FC = () => {
           return diff <= arcSpan
         })
         if (arcTargets.length > 0) {
-          const { updatedEnemies, results, effects } = applyWeaponHit('sword', mx, my, arcTargets, stats, 0)
+          const { updatedEnemies, results, effects } = applyWeaponHit('sword', mx, my, arcTargets, stats, stats.auraRange)
           const otherEnemies = allTargets.filter(e => !arcTargets.find(t => t.id === e.id))
           handleResults(results, effects, arcTargets, st, s, [...updatedEnemies, ...otherEnemies.filter(e => !e.isBoss)], stats, arcTargets.some(e => e.isBoss) ? updatedEnemies : null, st.boss)
         }
@@ -430,7 +430,7 @@ export const GameCanvas: React.FC = () => {
           return perp < e.size / 2 + 14
         })
         if (lineTargets.length > 0) {
-          const { updatedEnemies, results, effects } = applyWeaponHit('spear', mx, my, lineTargets, stats, 0)
+          const { updatedEnemies, results, effects } = applyWeaponHit('spear', mx, my, lineTargets, stats, stats.auraRange)
           const others = allTargets.filter(e => !lineTargets.find(t => t.id === e.id))
           handleResults(results, effects, lineTargets, st, s, [...updatedEnemies, ...others.filter(e => !e.isBoss)], stats, lineTargets.some(e => e.isBoss) ? updatedEnemies : null, st.boss)
         }
@@ -443,7 +443,7 @@ export const GameCanvas: React.FC = () => {
           if (d < nearestDist) { nearestDist = d; bvx = dx; bvy = dy }
         }
         // Only shoot if enemy is within range
-        const wandRange = stats.auraRange + WEAPONS.wand.range + 60
+        const wandRange = stats.auraRange + WEAPONS.wand.range
         if (nearestDist <= wandRange || allTargets.length === 0) {
           const bmag = Math.sqrt(bvx * bvx + bvy * bvy) || 1
           const speed = 400 + stats.attackSpeed * 70
@@ -472,7 +472,10 @@ export const GameCanvas: React.FC = () => {
         const dx = b.x - e.x, dy = b.y - e.y
         if (Math.sqrt(dx * dx + dy * dy) < b.radius + e.size / 2) {
           const { updatedEnemies, results, effects } = applyWeaponHit('wand', b.x, b.y, [e], stats, 0)
-          handleResults(results, effects, [e], st, s, updatedEnemies, stats, e.isBoss ? updatedEnemies : null, st.boss)
+          // updatedEnemies มีแค่ตัวที่รอดจาก [e] — ต้อง merge กับศัตรูตัวอื่นที่ไม่ได้โดนยิง
+          const otherEnemies = st.enemies.filter(o => o.id !== e.id)
+          const mergedEnemies = [...otherEnemies, ...updatedEnemies.filter(u => !u.isBoss)]
+          handleResults(results, effects, [e], st, s, mergedEnemies, stats, e.isBoss ? updatedEnemies : null, st.boss)
           soundManager.wandHit()
           const ef = { x: b.x, y: b.y, damage: 0, isCrit: false, color: b.color, id: nid() } as any
           ef.isExplosion = true; ef.explosionColor = b.color; st.hitEffects.push(ef)
