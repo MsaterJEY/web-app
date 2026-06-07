@@ -25,6 +25,7 @@ export interface GameState {
   pendingWeapon: WeaponType | null
   pendingXP: number       // XP สะสมระหว่าง stage รอ collect หลังจบ
   devMode: boolean
+  pendingLevelUps: number
 
   setPhase: (phase: GamePhase) => void
   startGame: (weapon: WeaponType) => void
@@ -86,6 +87,7 @@ export const useGameStore = create<GameState>()(
       pendingWeapon: null,
       pendingXP: 0,
       devMode: false,
+      pendingLevelUps: 0,
 
       setPhase: (phase) => set({ phase }),
 
@@ -114,7 +116,8 @@ export const useGameStore = create<GameState>()(
       // XP สะสมระหว่าง stage — ยังไม่เข้า level
       gainXP: (amount) => {
         const state = get()
-        const gained = Math.floor(amount * state.playerStats.xpGain)
+        // บวก 30% จากฐาน แล้วคูณ xpGain multiplier ของผู้เล่น
+        const gained = Math.floor(amount * 1.3 * state.playerStats.xpGain)
         set({ pendingXP: state.pendingXP + gained })
       },
 
@@ -125,26 +128,27 @@ export const useGameStore = create<GameState>()(
         let xp = state.xp + state.pendingXP
         let level = state.level
         let xpRequired = state.xpRequired
-        const levelUps: number[] = []
+        let levelUpCount = 0
 
         while (xp >= xpRequired) {
           xp -= xpRequired
           level++
           xpRequired = calcXPRequired(level)
-          levelUps.push(level)
+          levelUpCount++
         }
 
         set({ xp, level, xpRequired, pendingXP: 0 })
 
-        if (levelUps.length > 0) {
-          set({ phase: 'levelup' })
+        if (levelUpCount > 0) {
+          // เก็บจำนวนที่เหลือไว้ (ลบ 1 เพราะ set phase levelup ทันที)
+          set({ pendingLevelUps: levelUpCount - 1, phase: 'levelup' })
         }
       },
 
       levelUp: () => {
         const state = get()
         const newLevel = state.level + 1
-        set({ level: newLevel, xpRequired: calcXPRequired(newLevel), phase: 'levelup' })
+        set({ level: newLevel, xpRequired: calcXPRequired(newLevel), pendingLevelUps: 0, phase: 'levelup' })
       },
 
       applySkill: (skill) => {
@@ -171,7 +175,13 @@ export const useGameStore = create<GameState>()(
         if (eff.lightLevel)         stats.lightLevel          = Math.min(5, stats.lightLevel     + eff.lightLevel)
         if (eff.darkLevel)          stats.darkLevel           = Math.min(5, stats.darkLevel      + eff.darkLevel)
         if (eff.poisonLevel)        stats.poisonLevel         = Math.min(5, stats.poisonLevel    + eff.poisonLevel)
-        set({ playerStats: stats, acquiredSkills: [...state.acquiredSkills, skill], phase: 'playing' })
+        const remaining = state.pendingLevelUps ?? 0
+        if (remaining > 0) {
+          // ยังมี level up ที่รอ — แสดง skill card ต่อ
+          set({ playerStats: stats, acquiredSkills: [...state.acquiredSkills, skill], pendingLevelUps: remaining - 1, phase: 'levelup' })
+        } else {
+          set({ playerStats: stats, acquiredSkills: [...state.acquiredSkills, skill], phase: 'playing' })
+        }
       },
 
       takeDamage: (amount) => {
@@ -233,7 +243,7 @@ export const useGameStore = create<GameState>()(
         playerStats: { ...BASE_STATS },
         acquiredSkills: [],
         pendingXP: 0,
-        devMode: false // ปิดอมตะไปด้วยพร้อมกัน
+        devMode: state.devMode // คงสถานะ devMode ไว้
       })),
     }),
     {

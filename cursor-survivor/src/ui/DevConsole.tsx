@@ -4,27 +4,27 @@ import { useGameStore } from '../game/store'
 
 interface LogEntry { text: string; type: 'info' | 'success' | 'error' | 'system' }
 
-const HELP_TEXT = `
-คำสั่งที่ใช้ได้:
-  god on/off          — เปิด/ปิด God Mode
-  set stage [n]       — ตั้งค่าไป Stage ที่ต้องการ
-  next stage          — ข้ามไป Stage ถัดไป
-  back stage          — ย้อนกลับไป Stage ก่อนหน้า
-  resetstg            — รีเซ็ต Stage กลับไปที่ 1
-  set level [n]       — ตั้งค่า Level ที่ต้องการ
-  resetlv             — รีเซ็ต เลเวล กลับไปที่ 1
-  get xp [n]          — รับแต้ม XP ตามจำนวนที่ระบุ
-  set hp [n]          — ตั้งค่า HP ตัวเอง
-  set speed [n]       — ตั้งค่า Attack Speed (เช่น 2.0)
-  set dmg [n]         — ตั้งค่า Attack Damage multiplier (เช่น 5.0)
-  set range [n]       — ตั้งค่า Aura Range
-  killall             — ทำลายศัตรูทั้งหมดในฉาก
-  killp               — ฆ่าตัวตาย (ลด HP ตัวเองเป็น 0)
-  adboss              — เรียกบอสออกมา (Spawn Boss)
-  clearcht            — ล้างหน้าจอ Console
-  resetall            — รีเซ็ตค่าทุกอย่างของตัวละคร/เกม
-  help                — แสดงคำสั่งทั้งหมด
-`.trim()
+// คำสั่งที่คลิกได้ — { cmd: ข้อความดึงลง input, desc: คำอธิบาย }
+const HELP_COMMANDS = [
+  { cmd: 'god on',        desc: 'เปิด God Mode (อมตะ)' },
+  { cmd: 'god off',       desc: 'ปิด God Mode' },
+  { cmd: 'set stage ',    desc: 'ตั้งค่า Stage (ระบุตัวเลข)' },
+  { cmd: 'next stage',    desc: 'ข้ามไป Stage ถัดไป' },
+  { cmd: 'back stage',    desc: 'ย้อนกลับ Stage ก่อนหน้า' },
+  { cmd: 'resetstg',      desc: 'รีเซ็ต Stage กลับที่ 1' },
+  { cmd: 'set level ',    desc: 'ตั้งค่า Level (ระบุตัวเลข)' },
+  { cmd: 'resetlv',       desc: 'รีเซ็ต Level กลับที่ 1' },
+  { cmd: 'get xp ',       desc: 'รับ XP (ระบุจำนวน)' },
+  { cmd: 'set hp ',       desc: 'ตั้งค่า HP (ระบุตัวเลข)' },
+  { cmd: 'set speed ',    desc: 'ตั้งค่า Attack Speed' },
+  { cmd: 'set dmg ',      desc: 'ตั้งค่า Damage multiplier' },
+  { cmd: 'set range ',    desc: 'ตั้งค่า Aura Range' },
+  { cmd: 'killall',       desc: 'ทำลายศัตรูทั้งหมด' },
+  { cmd: 'killp',         desc: 'ฆ่าตัวตาย (HP = 0)' },
+  { cmd: 'adboss',        desc: 'Spawn Boss' },
+  { cmd: 'clearcht',      desc: 'ล้างหน้าจอ Console' },
+  { cmd: 'resetall',      desc: 'รีเซ็ตค่าทุกอย่าง' },
+]
 
 export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => void }> = ({ onKillAll, onSpawnBoss }) => {
   const store = useGameStore()
@@ -33,6 +33,7 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
   const [log, setLog] = useState<LogEntry[]>([
     { text: '🖥️  Dev Console — พิมพ์ "help" เพื่อดูคำสั่ง', type: 'system' },
   ])
+  const [showHelp, setShowHelp] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef<string[]>([])
@@ -66,15 +67,15 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
       case 'god':
         if (args[0] === 'on') {
           store.devGodMode(true)
-          addLog('✅ God Mode ON', 'success')
+          addLog('✅ God Mode ON — เป็นอมตะแล้ว', 'success')
         } else if (args[0] === 'off') {
           store.devGodMode(false)
-          addLog('❌ God Mode OFF', 'error')
+          addLog('❌ God Mode OFF — ปิดโหมดอมตะ', 'error')
         } else {
           // toggle ถ้าไม่ระบุ on/off
           const next = !store.devMode
           store.devGodMode(next)
-          addLog(next ? '✅ God Mode ON' : '❌ God Mode OFF', next ? 'success' : 'error')
+          addLog(next ? '✅ God Mode ON — เป็นอมตะแล้ว' : '❌ God Mode OFF — ปิดโหมดอมตะ', next ? 'success' : 'error')
         }
         break
 
@@ -180,7 +181,9 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
         break
 
       case 'help':
-        HELP_TEXT.split('\n').forEach(l => addLog(l, 'info'))
+        addLog('📋 คำสั่งที่ใช้ได้ (คลิกเพื่อดึงลง input):', 'system')
+        HELP_COMMANDS.forEach(h => addLog(`  ${h.cmd.padEnd(16)}— ${h.desc}`, 'info'))
+        setShowHelp(true)
         break
 
       default:
@@ -212,7 +215,7 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
 
   // Quick-action buttons — คำสั่งต้องตรงกับ parser จริง
   const quickButtons = [
-    { label: store.devMode ? 'God OFF' : 'God ON', cmd: store.devMode ? 'god off' : 'god on' },
+    { label: store.devMode ? '🛡 God OFF' : '🛡 God ON', cmd: store.devMode ? 'god off' : 'god on' },
     { label: '+1K XP', cmd: 'get xp 1000' },
     { label: 'Kill All', cmd: 'killall' },
     { label: 'Boss!', cmd: 'adboss' },
@@ -265,9 +268,30 @@ export const DevConsole: React.FC<{ onKillAll: () => void; onSpawnBoss: () => vo
 
             {/* Log area */}
             <div ref={logRef} className="flex-1 overflow-y-auto p-2" style={{ fontFamily: 'monospace', fontSize: 11 }}>
-              {log.map((l, i) => (
-                <div key={i} style={{ color: logColor(l.type), lineHeight: 1.5 }}>{l.text}</div>
-              ))}
+              {showHelp ? (
+                <>
+                  <div style={{ color: '#818cf8', marginBottom: 4 }}>📋 คลิกคำสั่งเพื่อดึงลง input:</div>
+                  {HELP_COMMANDS.map((h, i) => (
+                    <div key={i}
+                      onClick={() => { setInput(h.cmd); setShowHelp(false); setTimeout(() => inputRef.current?.focus(), 50) }}
+                      style={{ color: '#a3a3a3', lineHeight: 1.8, cursor: 'pointer', padding: '1px 4px', borderRadius: 4 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.25)', e.currentTarget.style.color = '#e9d5ff')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = '#a3a3a3')}
+                    >
+                      <span style={{ color: '#c4b5fd', fontFamily: 'monospace' }}>{h.cmd.padEnd(16, ' ')}</span>
+                      <span style={{ color: '#6b7280' }}>— {h.desc}</span>
+                    </div>
+                  ))}
+                  <div onClick={() => setShowHelp(false)}
+                    style={{ color: '#f87171', cursor: 'pointer', marginTop: 6, fontSize: 10 }}>
+                    ✕ ปิดรายการ
+                  </div>
+                </>
+              ) : (
+                log.map((l, i) => (
+                  <div key={i} style={{ color: logColor(l.type), lineHeight: 1.5 }}>{l.text}</div>
+                ))
+              )}
             </div>
 
             {/* Quick buttons */}

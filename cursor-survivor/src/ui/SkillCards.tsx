@@ -7,7 +7,7 @@ import { getRarityColor, getRarityGlow } from '../player/SkillSystem'
 import { soundManager } from '../game/SoundManager'
 
 export const SkillCards: React.FC = () => {
-  const { phase, level, acquiredSkills, applySkill } = useGameStore()
+  const { phase, level, acquiredSkills, applySkill, pendingLevelUps } = useGameStore()
   const [cards, setCards] = useState<SkillCard[]>([])
   const [hovered, setHovered] = useState<string | null>(null)
 
@@ -40,7 +40,9 @@ export const SkillCards: React.FC = () => {
           <div className="text-yellow-400 font-game text-lg mb-1" style={{ textShadow: '0 0 20px #ffd700' }}>
             LEVEL UP!
           </div>
-          <div className="text-purple-300 font-ui text-sm">Level {level} — เลือกสกิล 1 ใบ</div>
+          <div className="text-purple-300 font-ui text-sm">
+            Level {level} — เลือกสกิล{pendingLevelUps > 0 ? ` (เหลืออีก ${pendingLevelUps} รอบ)` : ' 1 ใบ'}
+          </div>
         </motion.div>
 
         {/* Cards */}

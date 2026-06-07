@@ -574,6 +574,8 @@ export const GameCanvas: React.FC = () => {
   useEffect(() => {
     const handleMouse = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY } }
     const handleKey = (e: KeyboardEvent) => {
+      // ไม่ pause ถ้า DevConsole กำลังเปิดอยู่ (focus อยู่ที่ input ใน console)
+      if (e.target instanceof HTMLInputElement) return
       if (e.key === 'Escape' || e.key === 'p') {
         const ph = storeRef.current.phase
         if (ph === 'playing') { storeRef.current.setPhase('paused'); soundManager.pauseGame() }
