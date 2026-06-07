@@ -80,7 +80,7 @@ export const HUD: React.FC = () => {
         {playerStats.lightLevel > 0     && <Badge icon="🌟" label={`Lv${playerStats.lightLevel}`}     color="#fffacd" />}
         {playerStats.earthLevel > 0     && <Badge icon="🪨" label={`Lv${playerStats.earthLevel}`}     color="#a0522d" />}
       </div>
-    </div>
+
       {/* Status Panel */}
       {showStatus && (
         <div className="pointer-events-auto absolute top-12 right-2 z-50 rounded-xl overflow-hidden"
@@ -101,25 +101,23 @@ export const HUD: React.FC = () => {
             {acquiredSkills.length === 0 && <div className="text-[10px] font-ui text-gray-600">— ยังไม่มีสกิล —</div>}
             <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
               {Object.entries(
-                acquiredSkills.reduce<Record<string, { icon: string; count: number }>>((acc, s) => {
+                acquiredSkills.reduce<Record<string, { icon: string; nameTH: string; count: number }>>((acc, s) => {
                   if (acc[s.id]) acc[s.id].count++
-                  else acc[s.id] = { icon: s.icon, count: 1 }
+                  else acc[s.id] = { icon: s.icon, nameTH: s.nameTH, count: 1 }
                   return acc
                 }, {})
-              ).map(([id, { icon, count }]) => {
-                const skill = acquiredSkills.find(s => s.id === id)!
-                return (
-                  <div key={id} className="flex items-center justify-between px-2 py-1 rounded"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    <span className="text-[10px] font-ui text-gray-300">{icon} {skill.nameTH}</span>
-                    <span className="text-[10px] font-ui text-purple-400 font-bold">×{count}</span>
-                  </div>
-                )
-              })}
+              ).map(([id, { icon, nameTH, count }]) => (
+                <div key={id} className="flex items-center justify-between px-2 py-1 rounded"
+                  style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <span className="text-[10px] font-ui text-gray-300">{icon} {nameTH}</span>
+                  <span className="text-[10px] font-ui text-purple-400 font-bold">×{count}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
+    </div>
   )
 }
 
